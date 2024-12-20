@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Pipes;
 
 namespace HekyLab.PingTray.App;
@@ -6,10 +7,10 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
 {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    using var stream = new NamedPipeServerStream("HekyLab.PingTray", PipeDirection.InOut);
-
     while (!stoppingToken.IsCancellationRequested)
     {
+      using var stream = new NamedPipeServerStream("HekyLab.PingTray", PipeDirection.InOut);
+
       logger.LogInformation("Waiting for connection...");
       await stream.WaitForConnectionAsync(stoppingToken);
       logger.LogInformation("Connected");
@@ -19,22 +20,25 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
         using var reader = new StreamReader(stream);
         using var writer = new StreamWriter(stream) { AutoFlush = true };
 
-        var request = await reader.ReadLineAsync(stoppingToken);
-        logger.LogInformation("Received request: {request}", request);
+        while (!reader.EndOfStream && !stoppingToken.IsCancellationRequested)
+        {
+          var request = await reader.ReadLineAsync(stoppingToken);
+          logger.LogInformation("Received request: {request}", request);
 
-        var response = ProcessRequest(request);
+          var response = ProcessRequest(request);
 
-        logger.LogInformation("Sending response: {response}", response);
-        await writer.WriteLineAsync(response);
+          logger.LogInformation("Sending response: {response}", response);
+          await writer.WriteLineAsync(response);
+        }
       }
       catch (IOException ex)
       {
         logger.LogError(ex, "Error while processing request");
       }
-
-      logger.LogInformation("Disconnecting...");
-      stream.Disconnect();
-      logger.LogInformation("Disconnected");
+      finally
+      {
+        if (stream.IsConnected) stream.Disconnect();
+      }
     }
   }
 
@@ -43,7 +47,7 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
     return request switch
     {
       "ping" => "pong",
-      "time" => DateTime.Now.ToString(),
+      "time" => DateTime.Now.ToString("o"),
       "status" => resultsStorage.Statuses.Values.All(s => s == System.Net.NetworkInformation.IPStatus.Success) ? "ok" : "error",
       _ => "unknown"
     };

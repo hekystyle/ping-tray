@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace HekyLab.PingTray.App;
 
-public class Client(ILogger<Client> logger) : BackgroundService
+public class UI(ILogger<UI> logger) : BackgroundService
 {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
