@@ -9,19 +9,20 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
   {
     while (!stoppingToken.IsCancellationRequested)
     {
-      using var stream = new NamedPipeServerStream("HekyLab.PingTray", PipeDirection.InOut);
+      logger.LogInformation("");
+      using var stream = new NamedPipeServerStream("HekyLab.PingTray", PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
 
       logger.LogInformation("Waiting for connection...");
       await stream.WaitForConnectionAsync(stoppingToken);
       logger.LogInformation("Connected");
-
       try
       {
-        using var reader = new StreamReader(stream);
-        using var writer = new StreamWriter(stream) { AutoFlush = true };
+        var reader = new StreamReader(stream);
+        var writer = new StreamWriter(stream) { AutoFlush = true };
 
-        while (!reader.EndOfStream && !stoppingToken.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested && !reader.EndOfStream)
         {
+          logger.LogInformation("Reading line...");
           var request = await reader.ReadLineAsync(stoppingToken);
           logger.LogInformation("Received request: {request}", request);
 
@@ -29,15 +30,12 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
 
           logger.LogInformation("Sending response: {response}", response);
           await writer.WriteLineAsync(response);
+          logger.LogInformation("Response sent");
         }
       }
       catch (IOException ex)
       {
         logger.LogError(ex, "Error while processing request");
-      }
-      finally
-      {
-        if (stream.IsConnected) stream.Disconnect();
       }
     }
   }
