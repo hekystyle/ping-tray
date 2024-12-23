@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
+using Microsoft.Extensions.Options;
 
 namespace HekyLab.PingTray.App;
 
@@ -9,7 +10,7 @@ public interface IPingResultsStorage
   void Store(string host, IPStatus status);
 }
 
-public class MemoryPingResultsStorage : IPingResultsStorage
+public class MemoryPingResultsStorage() : IPingResultsStorage
 {
   private ConcurrentDictionary<string, IPStatus> _statuses = [];
 

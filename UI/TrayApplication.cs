@@ -1,15 +1,21 @@
 using System.Diagnostics;
-using System.IO.Pipes;
+using Microsoft.Extensions.Logging;
 
 namespace HekyLab.PingTray.UI;
 
 public class TrayApplication : ApplicationContext
 {
-  private NotifyIcon _notifyIcon;
-  private CancellationTokenSource _cts = new();
+  private readonly NotifyIcon _notifyIcon;
+  private readonly CancellationTokenSource _cts = new();
 
-  public TrayApplication()
+  private readonly Client client = new();
+
+  private readonly ILogger<TrayApplication> _logger;
+
+  public TrayApplication(ILogger<TrayApplication> logger)
   {
+    _logger = logger;
+
     _notifyIcon = new NotifyIcon
     {
       Visible = true,
@@ -18,8 +24,28 @@ public class TrayApplication : ApplicationContext
       ContextMenuStrip = new ContextMenuStrip()
     };
     _notifyIcon.ContextMenuStrip.Items.Add("Exit", null, ExitApplication);
+    _notifyIcon.Click += NotifyIcon_Click;
 
     Task.Run(() => MonitorStatusAsync(_cts.Token));
+  }
+
+  private async void NotifyIcon_Click(object? sender, EventArgs e)
+  {
+    if (sender is null) return;
+    var icon = (NotifyIcon)sender;
+    icon.Text = "Loading...";
+    try
+    {
+      var results = await client.GetResults();
+      var table = string.Join(Environment.NewLine, results.Data.Select(kv => $"{kv.Key}: {kv.Value}"));
+      icon.BalloonTipText = table;
+      icon.ShowBalloonTip(5000);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while getting results");
+      icon.Text = "Failed to load status";
+    }
   }
 
   private async Task MonitorStatusAsync(CancellationToken token)
@@ -28,42 +54,34 @@ public class TrayApplication : ApplicationContext
     {
       try
       {
-        string? status = await SendStatusCommandAsync();
+        string? status = await client.GetStatus();
         UpdateTrayIcon(status);
       }
-      catch (Exception e)
+      catch (Exception ex)
       {
-        Console.WriteLine(e.Message);
-        Console.WriteLine(e.StackTrace);
-        UpdateTrayIcon("error");
+        _logger.LogError(ex, "Error while getting status");
+        UpdateTrayIcon(null);
       }
 
       await Task.Delay(2000, token);
     }
   }
 
-  private static async Task<string?> SendStatusCommandAsync()
-  {
-    using var pipeClient = new NamedPipeClientStream(".", "HekyLab.PingTray", PipeDirection.InOut, PipeOptions.Asynchronous);
-    await pipeClient.ConnectAsync();
-    var reader = new StreamReader(pipeClient);
-    var writer = new StreamWriter(pipeClient) { AutoFlush = true };
-    await Task.Delay(5000);
-    await writer.WriteLineAsync("status");
-    await writer.WriteLineAsync("time");
-    var status = await reader.ReadLineAsync();
-    Console.WriteLine(status);
-    Console.WriteLine(await reader.ReadLineAsync());
-    return status;
-  }
-
   private void UpdateTrayIcon(string? status)
   {
     if (_notifyIcon == null) return;
 
-    _notifyIcon.Icon = status == "ok"
-        ? SystemIcons.Information
-        : SystemIcons.Error;
+    _notifyIcon.Icon = ChooseIcon(status);
+  }
+
+  private static Icon ChooseIcon(string? status)
+  {
+    return status switch
+    {
+      "ok" => SystemIcons.Information,
+      "error" => SystemIcons.Error,
+      _ => SystemIcons.Question
+    };
   }
 
   private void ExitApplication(object? sender, EventArgs e)

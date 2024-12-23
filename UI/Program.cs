@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace HekyLab.PingTray.UI;
 
 static class Program
@@ -7,6 +9,7 @@ static class Program
   {
     Application.EnableVisualStyles();
     Application.SetCompatibleTextRenderingDefault(false);
-    Application.Run(new TrayApplication());
+    using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+    Application.Run(new TrayApplication(factory.CreateLogger<TrayApplication>()));
   }
 }

@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.NetworkInformation;
 using Microsoft.Extensions.Options;
 
@@ -10,8 +9,13 @@ public class PingWorker(
   IPingResultsStorage resultsStorage
 ) : BackgroundService
 {
+  private IEnumerable<string> Hosts => appOptions.Value.Hosts;
+
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
+    if (Hosts.Any()) logger.LogInformation("Configured {count} hosts", Hosts.Count());
+    else logger.LogWarning("No hosts to ping!");
+
     while (!stoppingToken.IsCancellationRequested)
     {
       await DoWork(stoppingToken);
@@ -21,12 +25,7 @@ public class PingWorker(
 
   private async Task DoWork(CancellationToken cancellationToken)
   {
-    var hosts = appOptions.Value.Hosts;
-    logger.LogInformation("Pinging {count} hosts...", hosts.Count());
-
-    if (!hosts.Any()) logger.LogWarning("No hosts to ping!");
-
-    var tasks = hosts.Select(async address =>
+    var tasks = Hosts.Select(async address =>
     {
       if (cancellationToken.IsCancellationRequested) return;
       using var ping = new Ping();

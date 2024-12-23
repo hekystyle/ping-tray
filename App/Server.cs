@@ -1,5 +1,6 @@
-using System.Globalization;
 using System.IO.Pipes;
+using System.Text.Json;
+using HekyLab.PingTray.Common;
 
 namespace HekyLab.PingTray.App;
 
@@ -9,7 +10,6 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
   {
     while (!stoppingToken.IsCancellationRequested)
     {
-      logger.LogInformation("");
       using var stream = new NamedPipeServerStream("HekyLab.PingTray", PipeDirection.InOut, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
 
       logger.LogInformation("Waiting for connection...");
@@ -28,7 +28,7 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
 
           var response = ProcessRequest(request);
 
-          logger.LogInformation("Sending response: {response}", response);
+          logger.LogInformation("Writing line: {response}", response);
           await writer.WriteLineAsync(response);
           logger.LogInformation("Response sent");
         }
@@ -36,6 +36,11 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
       catch (IOException ex)
       {
         logger.LogError(ex, "Error while processing request");
+      }
+      finally
+      {
+        logger.LogInformation("Disconnecting");
+        if (stream.IsConnected) stream.Disconnect();
       }
     }
   }
@@ -47,6 +52,7 @@ public class Server(ILogger<Server> logger, IPingResultsStorage resultsStorage) 
       "ping" => "pong",
       "time" => DateTime.Now.ToString("o"),
       "status" => resultsStorage.Statuses.Values.All(s => s == System.Net.NetworkInformation.IPStatus.Success) ? "ok" : "error",
+      "results" => JsonSerializer.Serialize(new ResultsResponse(resultsStorage.Statuses, new())),
       _ => "unknown"
     };
   }

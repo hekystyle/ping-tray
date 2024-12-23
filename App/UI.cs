@@ -10,9 +10,9 @@ public class UI(ILogger<UI> logger) : BackgroundService
     {
       StartInfo = new ProcessStartInfo
       {
-        FileName = "client.exe", // Název druhé aplikace
-        UseShellExecute = false,    // Nutné pro sdílenou konzoli
-        CreateNoWindow = false,     // Pokud nechceš novou konzoli
+        FileName = "client.exe",
+        UseShellExecute = false,
+        CreateNoWindow = false,
       }
     };
 

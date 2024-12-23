@@ -6,7 +6,7 @@ builder.Services
   .Configure<AppSettings>(builder.Configuration.GetSection("App"))
   .AddHostedService<Server>()
   // .AddHostedService<UI>()
-  // .AddHostedService<PingWorker>()
+  .AddHostedService<PingWorker>()
   .AddSingleton<IPingResultsStorage, MemoryPingResultsStorage>();
 
 var host = builder.Build();
