@@ -1,5 +1,5 @@
-using System.Net.NetworkInformation;
 using Microsoft.Extensions.Options;
+using System.Net.NetworkInformation;
 
 namespace HekyLab.PingTray.App;
 

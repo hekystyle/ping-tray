@@ -1,6 +1,6 @@
+using HekyLab.PingTray.Common;
 using System.IO.Pipes;
 using System.Text.Json;
-using HekyLab.PingTray.Common;
 
 namespace HekyLab.PingTray.App;
 

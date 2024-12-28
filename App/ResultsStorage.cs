@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Net.NetworkInformation;
-using Microsoft.Extensions.Options;
 
 namespace HekyLab.PingTray.App;
 
