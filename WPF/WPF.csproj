@@ -7,7 +7,11 @@
     <UseWPF>true</UseWPF>
 	<RootNamespace>HekyLab.PingTray.WPF</RootNamespace>
 	<AssemblyName>HekyLab.PingTray.WPF</AssemblyName>
+	<UseWindowsForms>True</UseWindowsForms>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -17,7 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
+      <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>

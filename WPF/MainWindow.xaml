@@ -9,18 +9,6 @@
     <Window.DataContext>
         <Binding RelativeSource="{RelativeSource Self}" Path="ViewModel"/>
     </Window.DataContext>
-    <Window.CommandBindings>
-        <CommandBinding x:Name="command_addHost"
-                        Command="ApplicationCommands.New"
-                        CanExecute="command_addHost_CanExecute"
-                        Executed="command_addHost_Executed"
-                        />
-        <CommandBinding x:Name="command_deleteHost"
-                        Command="ApplicationCommands.Delete"
-                        CanExecute="command_deleteHost_CanExecute"
-                        Executed="command_deleteHost_Executed"
-                        />
-    </Window.CommandBindings>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -30,7 +18,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <ListView x:Name="listView_pingResults" ItemsSource="{Binding Path=PingResults}">
+        <ListView x:Name="listView_pingResults" ItemsSource="{Binding Path=PingResults}" SelectedItem="{Binding SelectedPingResult}">
             <ListView.View>
                 <GridView AllowsColumnReorder="True">
                     <GridViewColumn Header="Host" DisplayMemberBinding="{Binding Host}"/>
@@ -56,14 +44,14 @@
             <Button x:Name="button_addHost"
                     Content="Add host"
                     Margin="0,5,0,0"
-                    Command="ApplicationCommands.New"
-                    CommandTarget="{Binding ElementName=txtHost}"
+                    Command="{Binding AddHostCommand}"
+                    CommandParameter="{Binding NewHost}"
                     />
             <Button x:Name="button_deleteHost"
                     Content="Delete host"
                     Margin="0,5,0,0"
-                    Command="ApplicationCommands.Delete"
-                    CommandTarget="{Binding ElementName=listView_pingResults}"
+                    Command="{Binding RemoveHostCommand}"
+                    CommandParameter="{Binding SelectedPingResult}"
                     />
         </StackPanel>
     </Grid>
